@@ -36,8 +36,10 @@ RAW_JSON_REQUIRED_KEYS = (
 )
 
 # Optional per-message keys copied into raw_json when present. Covers
-# vision annotations (vision_text) and the backfill producer's extra time
-# provenance fields (inferred_timestamp / timestamp_confidence / source_page).
+# vision annotations (vision_text), the backfill producer's extra time
+# provenance fields (inferred_timestamp / timestamp_confidence / source_page),
+# and its edge-truncation flag (edge_partial) used later for similarity
+# merging in the cleaning phase.
 RAW_JSON_EXTRA_KEYS = (
     "ui_time_text",
     "quoted_text",
@@ -46,6 +48,7 @@ RAW_JSON_EXTRA_KEYS = (
     "inferred_timestamp",
     "timestamp_confidence",
     "source_page",
+    "edge_partial",
 )
 
 
