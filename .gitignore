@@ -39,3 +39,6 @@ data/skills/**
 !data/skills/**/builder.py
 !data/skills/**/*.tsv
 !data/skills/**/*.json
+
+# Claude Code worktrees
+.claude/worktrees/

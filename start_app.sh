@@ -18,7 +18,7 @@ ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT_DIR"
 
 VENV_DIR="${UV_PROJECT_ENVIRONMENT:-.venv312}"
-UV_PYTHON="${UV_PYTHON:-3.12.13}"
+UV_PYTHON="${UV_PYTHON:-3.12}"
 PLAYWRIGHT_MARKER="$VENV_DIR/.playwright_chromium_installed"
 
 _needs_refresh() {
@@ -59,6 +59,10 @@ fi
 
 echo "[setup] syncing dependencies with uv (Python $UV_PYTHON)"
 export UV_PROJECT_ENVIRONMENT="$VENV_DIR"
+if ! "$UV_BIN" python find "$UV_PYTHON" >/dev/null 2>&1; then
+    echo "[setup] installing managed Python $UV_PYTHON"
+    "$UV_BIN" python install "$UV_PYTHON"
+fi
 "$UV_BIN" sync --locked --python "$UV_PYTHON"
 # shellcheck disable=SC1091
 source "$VENV_DIR/bin/activate"
