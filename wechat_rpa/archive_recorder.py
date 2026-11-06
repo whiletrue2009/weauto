@@ -68,6 +68,9 @@ class ArchiveRecorder:
     ) -> None:
         self.store = store
         self.save_image_crops = bool(save_image_crops)
+        # Extra directories searched when resolving relative image_path
+        # values (e.g. JSONL produced in another worktree).
+        self.image_search_dirs: list[Path] = []
 
     def record_snapshot(
         self,
@@ -112,7 +115,11 @@ class ArchiveRecorder:
         self.store.insert_drafts(drafts)
 
     def record_backfill_jsonl(
-        self, jsonl_path: str | Path, *, schema: str = "weauto_backfill_v1"
+        self,
+        jsonl_path: str | Path,
+        *,
+        schema: str = "weauto_backfill_v1",
+        image_base_dir: str | Path | None = None,
     ) -> int:
         """Import a backfill JSONL file (one message per line) as drafts.
 
@@ -127,6 +134,18 @@ class ArchiveRecorder:
         path = Path(jsonl_path)
         if not path.is_file():
             return 0
+        # Resolve producer-relative image paths: against the JSONL file's own
+        # directory tree (covers cross-worktree imports) plus any explicit
+        # base dir the caller provides.
+        self.image_search_dirs.extend(path.parents)
+        if image_base_dir:
+            self.image_search_dirs.append(Path(image_base_dir))
+        try:
+            return self._import_jsonl_grouped(path, schema=schema)
+        finally:
+            del self.image_search_dirs[len(self.image_search_dirs) - len(path.parents):]
+
+    def _import_jsonl_grouped(self, path: Path, *, schema: str) -> int:
         grouped: dict[str, list[dict[str, Any]]] = {}
         with path.open("r", encoding="utf-8") as handle:
             for line in handle:
@@ -264,10 +283,15 @@ class ArchiveRecorder:
         if not image_path:
             return None
         path = Path(image_path)
-        if not path.is_file():
+        candidates = [path] if path.is_absolute() else [
+            path,
+            *(base / path for base in self.image_search_dirs),
+        ]
+        source_file = next((c for c in candidates if c.is_file()), None)
+        if source_file is None:
             return None
         try:
-            data = path.read_bytes()
+            data = source_file.read_bytes()
         except OSError:
             return None
         # The draft row trusts only the CAS digest; the parser's own crop
