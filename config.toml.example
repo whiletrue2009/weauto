@@ -24,6 +24,8 @@ poll_interval_sec = 1.0
 action_cooldown_sec = 8.0
 normal_reply_interval_sec = 300.0
 dry_run = true
+# false 表示纯采集模式：只捕获/OCR/保存本地历史，不进入回复链路。
+reply_enabled = true
 activate_wait_sec = 0.6
 click_move_duration_sec = 0.18
 mouse_down_hold_sec = 0.03
@@ -268,10 +270,10 @@ ab_compare_max_text_len = 120
 [llm]
 enabled = true
 base_url = ""
-base_url_env = "NVIDIA_BASE_URL"
+base_url_env = "ZHIPU_BASE_URL"
 api_key = ""
-api_key_env = "NVIDIA_API_KEY"
-model = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+api_key_env = "ZHIPU_API_KEY"
+model = "glm-5.3"
 api_format = "openai"
 ollama_native = false
 openai_compat_think_mode = "on"
