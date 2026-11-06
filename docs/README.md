@@ -17,6 +17,7 @@
 1. [消息接收与回复流程](05-message-processing.md)
 2. [Agent、记忆、人物与技能](06-agent-memory-and-tools.md)
 3. [桥接与外部集成](07-bridges-and-integrations.md)
+4. [消息归档存储标准](12-archive-storage-standard.md)
 
 ### 运维与开发
 
