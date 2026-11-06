@@ -181,7 +181,18 @@ ArchiveRecorder(store).record_snapshot(
     captured_at: int | None = None,
     parser_source: str = "ocr",
 ) -> None
+
+ArchiveRecorder(store).record_backfill_jsonl(jsonl_path)
+    # 导入回补产出的 JSONL（schema=weauto_backfill_v1，每行一条消息）。
+    # 每行都是一条独立草稿，重复 fingerprint 的行全部保留——
+    # "按 fingerprint 取最后一行"属于 P2 清洗逻辑，不在入库时执行。
+    # 行内 inferred_timestamp / timestamp_confidence / source_page /
+    # ui_time_text 等字段经白名单透传进 raw_json，无需 schema 变更。
 ```
+
+回补产出层（滚动采集 JSONL）与入库层解耦：回补会话可以独立产出 JSONL 文件，
+再由 `record_backfill_jsonl` 批量导入；逐行 `observed_at` 会落在草稿行上，
+按 `session_title` 分组共享一个 capture 行。
 
 Bot 接线要求：`record_snapshot` 调用必须 try/except 包裹，归档失败**不得阻断**
 回复主链路；Markdown 历史（`ChatHistoryStore`）继续双写保留。
