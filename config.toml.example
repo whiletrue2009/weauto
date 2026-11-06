@@ -353,6 +353,19 @@ debug_log_payload = false
 debug_log_response = false
 
 # ============================================================
+# Archive (append-only message draft store)
+# ============================================================
+# Persists every visible message captured from detached windows into a local
+# SQLite draft database. See docs/12-archive-storage-standard.md.
+# Drafts are never deduplicated or merged here — cleaning is a later phase.
+[archive]
+enabled = false
+path = "data/archive/weauto.sqlite"
+blob_dir = "data/archive/blobs"
+# Save visible image-bubble crops into the content-addressed blob store.
+save_image_crops = true
+
+# ============================================================
 # Image Generation / Editing
 # ============================================================
 [image_generation]

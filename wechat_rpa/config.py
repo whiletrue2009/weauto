@@ -148,6 +148,15 @@ class VisionConfig:
 
 
 @dataclass
+class ArchiveConfig:
+    # Append-only message draft archive (docs/12-archive-storage-standard.md).
+    enabled: bool = False
+    path: str = "data/archive/weauto.sqlite"
+    blob_dir: str = "data/archive/blobs"
+    save_image_crops: bool = True
+
+
+@dataclass
 @dataclass
 class ImageGenerationConfig:
     enabled: bool = False
@@ -423,6 +432,7 @@ class AppConfig:
     llm_summary: LlmConfig = field(default_factory=LlmConfig)
     llm_heartbeat: LlmConfig = field(default_factory=LlmConfig)
     vision: VisionConfig = field(default_factory=VisionConfig)
+    archive: ArchiveConfig = field(default_factory=ArchiveConfig)
     image_generation: ImageGenerationConfig = field(default_factory=ImageGenerationConfig)
     image_editing: ImageEditingConfig = field(default_factory=ImageEditingConfig)
 
@@ -1192,6 +1202,15 @@ def load_config(path: str | Path | None) -> AppConfig:
     cfg.llm_planner = _load_llm_config(data.get("llm_planner", {}), cfg.llm)
     cfg.llm_summary = _load_llm_config(data.get("llm_summary", {}), cfg.llm)
     cfg.llm_heartbeat = _load_llm_config(data.get("llm_heartbeat", {}), cfg.llm)
+    archive_raw = data.get("archive", {})
+    cfg.archive = ArchiveConfig(
+        enabled=bool(archive_raw.get("enabled", cfg.archive.enabled)),
+        path=str(archive_raw.get("path", cfg.archive.path)),
+        blob_dir=str(archive_raw.get("blob_dir", cfg.archive.blob_dir)),
+        save_image_crops=bool(
+            archive_raw.get("save_image_crops", cfg.archive.save_image_crops)
+        ),
+    )
     vision_raw = data.get("vision", {})
     vision_base_url = str(vision_raw.get("base_url", cfg.vision.base_url)).strip().rstrip("/")
     vision_base_url_env = str(vision_raw.get("base_url_env", cfg.vision.base_url_env)).strip()

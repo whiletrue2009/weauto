@@ -33,6 +33,8 @@ from PIL import Image
 
 from .action_processor import ActionProcessor
 from .agent_store import ChatHistoryStore, MemoryStore, PeopleStore, SkillStore
+from .archive_recorder import ArchiveRecorder
+from .archive_store import ArchiveStore
 from .bridge import BridgeClient
 from .config import AppConfig
 from .detector import ChatRowState, detect_chat_rows
@@ -552,6 +554,17 @@ class WeChatGuiRpaBot:
         self.agent_people = PeopleStore("data/people")
         self.agent_people.cleanup()
         self.chat_history = ChatHistoryStore("data/chat_history")
+        # Append-only draft archive (docs/12-archive-storage-standard.md).
+        # Failures here must never block the reply pipeline.
+        self.archive_recorder: "ArchiveRecorder | None" = None
+        if getattr(getattr(cfg, "archive", None), "enabled", False):
+            try:
+                self.archive_recorder = ArchiveRecorder(
+                    ArchiveStore(cfg.archive.path, cfg.archive.blob_dir),
+                    save_image_crops=cfg.archive.save_image_crops,
+                )
+            except Exception as exc:
+                print(f"[warn] archive init failed, archive disabled: {exc}")
         self.people_alias_resolver = PersonAliasResolver(
             cfg.people_aliases_path,
             enabled=cfg.people_aliases_enabled,
@@ -7445,6 +7458,26 @@ class WeChatGuiRpaBot:
                     )
                 self._close_detached_image(image)
                 image = None
+
+                if self.archive_recorder is not None:
+                    try:
+                        snapshot_parser = (
+                            "vision"
+                            if "vision" in str(snapshot.source or "")
+                            else "ocr"
+                        )
+                        self.archive_recorder.record_snapshot(
+                            session_title=window.title,
+                            messages=snapshot.messages,
+                            window_id=window.window_id,
+                            source="realtime",
+                            captured_at=int(snapshot.captured_at),
+                            parser_source=snapshot_parser,
+                        )
+                    except Exception as exc:
+                        print(
+                            f"[warn] archive record failed title={window.title!r}: {exc}"
+                        )
 
                 row_for_merge = ChatRowState(
                     row_idx=int(window.window_id),
